@@ -1,0 +1,14 @@
+{
+  "name": "genie-training-engine",
+  "version": "1.0.0",
+  "description": "Localized, resource-conscious dynamic training session curator app",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^5.4.21"
+  }
+}

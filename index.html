@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Genie Training Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Smooth transition behaviors for dynamic sliders */
+        .phase-transition { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Hide scrollbars but preserve functionality for mobile views */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-full font-sans antialiased flex flex-col justify-between select-none">
+
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/50 px-4 py-3 sticky top-0 z-50 flex justify-between items-center">
+        <div>
+            <h1 class="text-sm font-bold tracking-wider text-slate-400 uppercase">Engine Status</h1>
+            <div class="flex items-center gap-2 mt-0.5">
+                <span id="network-badge" class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="connection-status" class="text-xs font-semibold text-slate-200">Local Server Connected</span>
+            </div>
+        </div>
+        <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700/60 text-right">
+            <span class="text-xs text-slate-400 block uppercase tracking-tight text-[10px]">System Clock</span>
+            <span id="system-clock" class="font-mono text-base font-bold text-emerald-400">00:00:00</span>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto no-scrollbar p-4 max-w-md mx-auto w-full space-y-6">
+        
+        <section id="config-view" class="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl space-y-5">
+            <div class="border-b border-slate-700 pb-3">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    🛠️ Engine Configuration
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">Configure your target schedules and daily micro-phases.</p>
+            </div>
+            
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Default Window Length</label>
+                <select id="pref-duration" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500">
+                    <option value="30">30 Minutes (Express Target)</option>
+                    <option value="60" selected>60 Minutes (Standard Track)</option>
+                    <option value="90">90 Minutes (Deep Immersion)</option>
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Weekly Discipline Matrix</label>
+                <div class="grid grid-cols-1 gap-2 bg-slate-900/50 p-2 rounded-xl border border-slate-700/50 text-xs">
+                    <div id="weekly-days-container" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <button id="save-config-btn" class="w-full bg-brand-600 hover:bg-brand-500 active:scale-[0.98] transition text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-brand-600/20">
+                Commit & Lock Configurations
+            </button>
+        </section>
+
+        <section id="dashboard-view" class="hidden space-y-4">
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl border border-slate-700/80 shadow-xl text-center space-y-4">
+                <div class="space-y-1">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-brand-400">Target Track Today</h3>
+                    <p id="today-discipline-display" class="text-xl font-black text-white">Flexibility & Core</p>
+                </div>
+                
+                <button id="start-session-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all py-5 px-6 rounded-2xl font-black tracking-wide text-white text-base shadow-lg shadow-emerald-900/40 flex flex-col items-center justify-center gap-0.5">
+                    <span>START TAILORED SESSION</span>
+                    <span class="text-[10px] uppercase font-normal text-emerald-200 tracking-wider">Queries Local Ollama Engine</span>
+                </button>
+
+                <button id="trigger-settings-btn" class="text-xs text-slate-400 hover:text-slate-200 underline block mx-auto pt-1">
+                    Modify Settings & Preferences
+                </button>
+            </div>
+
+            <div id="macro-overview-panel" class="hidden bg-slate-800/90 border border-brand-500/30 p-4 rounded-xl space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                    <span class="text-xs font-bold tracking-wider text-brand-400 uppercase">Macro Overview Phase</span>
+                    <span id="macro-countdown" class="font-mono text-xs bg-brand-900/60 border border-brand-500 text-brand-300 px-2 py-0.5 rounded animate-pulse">60s remaining</span>
+                </div>
+                <div id="macro-bubbles-container" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <div id="micro-focus-panel" class="hidden space-y-3">
+                <div class="bg-slate-800 border-l-4 border-amber-500 rounded-r-xl p-4 shadow-lg space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span id="current-phase-idx" class="text-[10px] uppercase font-bold tracking-widest bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Phase 1 of 3</span>
+                            <h4 id="current-phase-title" class="text-lg font-black text-white mt-1">Stretches & Mobility</h4>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase block tracking-wider text-slate-400">Phase Window</span>
+                            <span id="phase-time-window" class="font-mono text-xs font-bold text-slate-200">05:00 - 05:15</span>
+                        </div>
+                    </div>
+                    
+                    <div id="current-drills-list" class="space-y-2 pt-2 border-t border-slate-700/50">
+                        </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="offline-vault-view" class="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/40 space-y-3">
+            <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase flex items-center gap-1.5">
+                📦 Local Session Vault (Offline Library)
+            </h3>
+            <div id="vault-cards-container" class="space-y-2">
+                <p class="text-xs text-slate-500 italic p-3 text-center bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+                    No cached sessions found. Run a live Ollama sync session to build your local vault.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+  <script type="module" src="./src/js/storage.js"></script>
+    <script type="module" src="./src/js/timers.js"></script>
+    <script type="module" src="./src/js/app.js"></script>
+</body>
+</html>
+
+
